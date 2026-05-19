@@ -1,3 +1,4 @@
+import { Component, type ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -6,6 +7,40 @@ import { DashboardPage } from './pages/DashboardPage'
 import { PlanDetailPage } from './pages/PlanDetailPage'
 import { WorkoutSessionPage } from './pages/WorkoutSessionPage'
 import { PremiumPage } from './pages/PremiumPage'
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-white mb-2">ALIENS<span className="text-neon">.Fit</span></h1>
+          <div className="bg-dark-800 border border-red-500/30 rounded-2xl p-5 max-w-md w-full text-left mt-2">
+            <p className="text-red-400 text-sm font-semibold mb-2">Errore applicazione</p>
+            <p className="text-gray-500 text-xs font-mono break-all">{(this.state.error as Error).message}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-neon text-dark-900 font-semibold rounded-xl text-sm hover:brightness-110"
+          >
+            Ricarica
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function SetupBanner() {
   return (
@@ -33,7 +68,7 @@ function SetupBanner() {
   )
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -51,7 +86,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function AuthRoute({ children }: { children: React.ReactNode }) {
+function AuthRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -70,48 +105,50 @@ export default function App() {
   if (!isSupabaseConfigured) return <SetupBanner />
 
   return (
-    <Routes>
-      <Route
-        path="/auth"
-        element={
-          <AuthRoute>
-            <AuthPage />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/plan/:id"
-        element={
-          <ProtectedRoute>
-            <PlanDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/session/:dayId"
-        element={
-          <ProtectedRoute>
-            <WorkoutSessionPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/premium"
-        element={
-          <ProtectedRoute>
-            <PremiumPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route
+          path="/auth"
+          element={
+            <AuthRoute>
+              <AuthPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan/:id"
+          element={
+            <ProtectedRoute>
+              <PlanDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/session/:dayId"
+          element={
+            <ProtectedRoute>
+              <WorkoutSessionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/premium"
+          element={
+            <ProtectedRoute>
+              <PremiumPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ErrorBoundary>
   )
 }
