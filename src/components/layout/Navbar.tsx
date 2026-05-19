@@ -1,8 +1,10 @@
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 
 export function Navbar() {
   const { user, signOut } = useAuth()
+  const location = useLocation()
 
   const handleSignOut = async () => {
     try {
@@ -12,10 +14,36 @@ export function Navbar() {
     }
   }
 
+  const navLinks = [
+    { path: '/', label: 'Home' },
+    { path: '/history', label: 'Storico' },
+    { path: '/premium', label: 'Premium' },
+  ]
+
   return (
     <nav className="hidden md:flex fixed top-0 left-0 right-0 z-40 bg-dark-900/90 backdrop-blur border-b border-dark-700 h-14 px-6 items-center justify-between">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-6">
         <img src="/logo.svg" alt="AliensFit" className="h-8 w-auto" />
+        <div className="flex items-center gap-1">
+          {navLinks.map(link => {
+            const isActive = link.path === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(link.path)
+            return (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'text-neon bg-neon/10'
+                    : 'text-gray-400 hover:text-white hover:bg-dark-700'
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
+        </div>
       </div>
 
       {user && (
