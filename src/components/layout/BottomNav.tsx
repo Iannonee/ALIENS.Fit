@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 const navItems = [
   {
-    path: '/',
+    path: '/dashboard',
     label: 'Home',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -38,8 +38,8 @@ export function BottomNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-dark-800/95 backdrop-blur border-t border-dark-700 h-16 flex items-center">
       {navItems.map(item => {
-        const isActive = item.path === '/'
-          ? location.pathname === '/'
+        const isActive = item.path === '/dashboard'
+          ? location.pathname === '/dashboard'
           : location.pathname.startsWith(item.path)
 
         return (

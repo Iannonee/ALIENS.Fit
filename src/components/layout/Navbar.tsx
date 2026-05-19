@@ -15,7 +15,7 @@ export function Navbar() {
   }
 
   const navLinks = [
-    { path: '/', label: 'Home' },
+    { path: '/dashboard', label: 'Home' },
     { path: '/history', label: 'Storico' },
     { path: '/premium', label: 'Premium' },
   ]
@@ -26,8 +26,8 @@ export function Navbar() {
         <img src="/logo.svg" alt="AliensFit" className="h-8 w-auto" />
         <div className="flex items-center gap-1">
           {navLinks.map(link => {
-            const isActive = link.path === '/'
-              ? location.pathname === '/'
+            const isActive = link.path === '/dashboard'
+              ? location.pathname === '/dashboard'
               : location.pathname.startsWith(link.path)
             return (
               <Link
