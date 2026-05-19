@@ -42,15 +42,9 @@ export function AuthPage() {
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-4">
       <div className="mb-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-neon flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2.5">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            ALIENS<span className="text-neon">.Fit</span>
-          </h1>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <img src="/logo.svg" alt="AliensFit" className="w-12 h-12" />
+          <h1 className="text-2xl font-bold text-white tracking-tight">AliensFit</h1>
         </div>
         <p className="text-sm text-gray-500">Il tuo personal trainer alieno</p>
       </div>
@@ -136,7 +130,7 @@ export function AuthPage() {
       </div>
 
       <p className="mt-6 text-xs text-gray-600 text-center">
-        Powered by ALIENS.Fit © 2025
+        Powered by AliensFit © 2025
       </p>
     </div>
   )

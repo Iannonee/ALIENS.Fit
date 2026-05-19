@@ -21,6 +21,7 @@ export function ExerciseRow({ exercise, onUpdate, onDelete }: ExerciseRowProps) 
   const metaParts: string[] = []
   if (exercise.sets) metaParts.push(`${exercise.sets} serie`)
   if (exercise.reps) metaParts.push(`${exercise.reps} rip`)
+  if (exercise.weight_kg) metaParts.push(`${exercise.weight_kg} kg`)
   if (exercise.rest_seconds) metaParts.push(`${exercise.rest_seconds}s riposo`)
 
   return (

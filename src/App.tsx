@@ -24,7 +24,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">ALIENS<span className="text-neon">.Fit</span></h1>
+          <img src="/logo.svg" alt="AliensFit" className="w-10 h-10 mb-1" />
+          <h1 className="text-xl font-bold text-white mb-2">AliensFit</h1>
           <div className="bg-dark-800 border border-red-500/30 rounded-2xl p-5 max-w-md w-full text-left mt-2">
             <p className="text-red-400 text-sm font-semibold mb-2">Errore applicazione</p>
             <p className="text-gray-500 text-xs font-mono break-all">{(this.state.error as Error).message}</p>
@@ -45,12 +46,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 function SetupBanner() {
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-12 h-12 rounded-xl bg-neon flex items-center justify-center mb-4">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2.5">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
-      </div>
-      <h1 className="text-2xl font-bold text-white mb-2">ALIENS<span className="text-neon">.Fit</span></h1>
+      <img src="/logo.svg" alt="AliensFit" className="w-14 h-14 mb-1" />
+      <h1 className="text-2xl font-bold text-white mb-2">AliensFit</h1>
       <div className="mt-4 bg-dark-800 border border-yellow-500/30 rounded-2xl p-6 max-w-md w-full text-left">
         <p className="text-yellow-400 font-semibold text-sm mb-3">⚠ Configurazione richiesta</p>
         <p className="text-gray-400 text-sm mb-4">

@@ -160,6 +160,7 @@ export function WorkoutSessionPage() {
             const metaParts: string[] = []
             if (exercise.sets) metaParts.push(`${exercise.sets} serie`)
             if (exercise.reps) metaParts.push(`${exercise.reps} rip`)
+            if (exercise.weight_kg) metaParts.push(`${exercise.weight_kg} kg`)
 
             return (
               <div

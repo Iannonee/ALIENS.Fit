@@ -14,6 +14,7 @@ export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }:
   const [name, setName] = useState(initial?.name ?? '')
   const [sets, setSets] = useState(initial?.sets?.toString() ?? '')
   const [reps, setReps] = useState(initial?.reps ?? '')
+  const [weight, setWeight] = useState(initial?.weight_kg?.toString() ?? '')
   const [rest, setRest] = useState(initial?.rest_seconds?.toString() ?? '')
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [loading, setLoading] = useState(false)
@@ -35,6 +36,7 @@ export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }:
         name: name.trim(),
         sets: sets ? parseInt(sets) : null,
         reps: reps.trim() || null,
+        weight_kg: weight ? parseFloat(weight) : null,
         rest_seconds: rest ? parseInt(rest) : null,
         notes: notes.trim() || null,
         order_index: orderIndex,
@@ -62,7 +64,7 @@ export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }:
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1.5">Serie</label>
           <input
@@ -82,6 +84,18 @@ export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }:
             value={reps}
             onChange={e => setReps(e.target.value)}
             placeholder="8-12"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-400 mb-1.5">Peso (kg)</label>
+          <input
+            type="number"
+            value={weight}
+            onChange={e => setWeight(e.target.value)}
+            placeholder="80"
+            min="0"
+            step="0.5"
             className={inputClass}
           />
         </div>
