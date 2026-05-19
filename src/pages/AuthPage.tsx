@@ -42,11 +42,7 @@ export function AuthPage() {
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-4">
       <div className="mb-8 text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <img src="/logo.svg" alt="AliensFit" className="w-12 h-12" />
-          <h1 className="text-2xl font-bold text-white tracking-tight">AliensFit</h1>
-        </div>
-        <p className="text-sm text-gray-500">Il tuo personal trainer alieno</p>
+        <img src="/logo.svg" alt="AliensFit" className="h-24 w-auto mx-auto" />
       </div>
 
       <div className="w-full max-w-sm bg-dark-800 border border-dark-700 rounded-2xl p-6 shadow-2xl">

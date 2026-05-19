@@ -15,8 +15,7 @@ export function Navbar() {
   return (
     <nav className="hidden md:flex fixed top-0 left-0 right-0 z-40 bg-dark-900/90 backdrop-blur border-b border-dark-700 h-14 px-6 items-center justify-between">
       <div className="flex items-center gap-2">
-        <img src="/logo.svg" alt="AliensFit" className="w-8 h-8" />
-        <span className="text-white font-bold tracking-tight">AliensFit</span>
+        <img src="/logo.svg" alt="AliensFit" className="h-8 w-auto" />
       </div>
 
       {user && (
