@@ -50,7 +50,7 @@ export function DashboardPage() {
             <div>
               <p className="text-sm text-gray-500">{greeting()},</p>
               <h1 className="text-xl font-bold text-white truncate max-w-[220px]">
-                {user?.email?.split('@')[0] ?? 'Alien'}
+                {user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? 'Alien'}
               </h1>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-neon/10 border border-neon/20 flex items-center justify-center">

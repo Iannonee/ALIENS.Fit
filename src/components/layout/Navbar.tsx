@@ -27,7 +27,9 @@ export function Navbar() {
 
       {user && (
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-400 truncate max-w-[200px]">{user.email}</span>
+          <span className="text-sm text-gray-400 truncate max-w-[200px]">
+            {user.user_metadata?.username ?? user.email}
+          </span>
           <Button variant="ghost" size="sm" onClick={handleSignOut}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
