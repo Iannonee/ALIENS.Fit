@@ -7,6 +7,8 @@ import { DashboardPage } from './pages/DashboardPage'
 import { PlanDetailPage } from './pages/PlanDetailPage'
 import { WorkoutSessionPage } from './pages/WorkoutSessionPage'
 import { PremiumPage } from './pages/PremiumPage'
+import { HistoryPage } from './pages/HistoryPage'
+import { HistorySessionPage } from './pages/HistorySessionPage'
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null }
@@ -141,6 +143,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <PremiumPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history/:sessionId"
+          element={
+            <ProtectedRoute>
+              <HistorySessionPage />
             </ProtectedRoute>
           }
         />

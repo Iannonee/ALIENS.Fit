@@ -5,18 +5,28 @@ import { Button } from '../ui/Button'
 interface ExerciseFormProps {
   dayId: string
   orderIndex: number
+  type?: 'exercise' | 'warmup' | 'cooldown'
   initial?: Exercise
   onSubmit: (exercise: Omit<Exercise, 'id' | 'created_at'>) => Promise<void>
   onCancel: () => void
 }
 
-export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }: ExerciseFormProps) {
+export function ExerciseForm({ dayId, orderIndex, type = 'exercise', initial, onSubmit, onCancel }: ExerciseFormProps) {
+  const effectiveType = initial?.exercise_type ?? type
+
   const [name, setName] = useState(initial?.name ?? '')
   const [sets, setSets] = useState(initial?.sets?.toString() ?? '')
   const [reps, setReps] = useState(initial?.reps ?? '')
   const [weight, setWeight] = useState(initial?.weight_kg?.toString() ?? '')
   const [rest, setRest] = useState(initial?.rest_seconds?.toString() ?? '')
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  // For warmup/cooldown: duration stored in weight_kg, intensity stored in reps
+  const [duration, setDuration] = useState(
+    effectiveType !== 'exercise' ? (initial?.weight_kg?.toString() ?? '') : ''
+  )
+  const [intensity, setIntensity] = useState(
+    effectiveType !== 'exercise' ? (initial?.reps ?? '') : ''
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,87 +41,136 @@ export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }:
     setError(null)
 
     try {
-      await onSubmit({
-        day_id: dayId,
-        name: name.trim(),
-        sets: sets ? parseInt(sets) : null,
-        reps: reps.trim() || null,
-        weight_kg: weight ? parseFloat(weight) : null,
-        rest_seconds: rest ? parseInt(rest) : null,
-        notes: notes.trim() || null,
-        order_index: orderIndex,
-      })
+      if (effectiveType === 'exercise') {
+        await onSubmit({
+          day_id: dayId,
+          name: name.trim(),
+          sets: sets ? parseInt(sets) : null,
+          reps: reps.trim() || null,
+          weight_kg: weight ? parseFloat(weight) : null,
+          rest_seconds: rest ? parseInt(rest) : null,
+          notes: notes.trim() || null,
+          order_index: orderIndex,
+          exercise_type: 'exercise',
+        })
+      } else {
+        // warmup or cooldown: duration → weight_kg, intensity → reps
+        await onSubmit({
+          day_id: dayId,
+          name: name.trim(),
+          sets: null,
+          reps: intensity.trim() || null,
+          weight_kg: duration ? parseFloat(duration) : null,
+          rest_seconds: null,
+          notes: notes.trim() || null,
+          order_index: orderIndex,
+          exercise_type: effectiveType,
+        })
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nel salvataggio')
       setLoading(false)
     }
   }
 
+  const typeLabel = effectiveType === 'warmup' ? 'Riscaldamento' : effectiveType === 'cooldown' ? 'Defaticamento' : 'Esercizio'
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label className="block text-xs font-medium text-gray-400 mb-1.5">
-          Nome esercizio <span className="text-neon">*</span>
+          Nome {typeLabel.toLowerCase()} <span className="text-neon">*</span>
         </label>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="es. Panca Piana"
+          placeholder={effectiveType === 'warmup' ? 'es. Corsa leggera' : effectiveType === 'cooldown' ? 'es. Stretching' : 'es. Panca Piana'}
           required
           className={inputClass}
           autoFocus
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Serie</label>
-          <input
-            type="number"
-            value={sets}
-            onChange={e => setSets(e.target.value)}
-            placeholder="4"
-            min="1"
-            max="99"
-            className={inputClass}
-          />
+      {effectiveType === 'exercise' ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Serie</label>
+              <input
+                type="number"
+                value={sets}
+                onChange={e => setSets(e.target.value)}
+                placeholder="4"
+                min="1"
+                max="99"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Ripetizioni</label>
+              <input
+                type="text"
+                value={reps}
+                onChange={e => setReps(e.target.value)}
+                placeholder="8-12"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Peso (kg)</label>
+              <input
+                type="number"
+                value={weight}
+                onChange={e => setWeight(e.target.value)}
+                placeholder="80"
+                min="0"
+                step="0.5"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Riposo (s)</label>
+              <input
+                type="number"
+                value={rest}
+                onChange={e => setRest(e.target.value)}
+                placeholder="90"
+                min="0"
+                max="600"
+                className={inputClass}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">Durata (min)</label>
+            <input
+              type="number"
+              value={duration}
+              onChange={e => setDuration(e.target.value)}
+              placeholder="10"
+              min="0"
+              step="1"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
+              Intensità <span className="text-gray-600">(opzionale)</span>
+            </label>
+            <input
+              type="text"
+              value={intensity}
+              onChange={e => setIntensity(e.target.value)}
+              placeholder="es. bassa, moderata"
+              className={inputClass}
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Ripetizioni</label>
-          <input
-            type="text"
-            value={reps}
-            onChange={e => setReps(e.target.value)}
-            placeholder="8-12"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Peso (kg)</label>
-          <input
-            type="number"
-            value={weight}
-            onChange={e => setWeight(e.target.value)}
-            placeholder="80"
-            min="0"
-            step="0.5"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Riposo (s)</label>
-          <input
-            type="number"
-            value={rest}
-            onChange={e => setRest(e.target.value)}
-            placeholder="90"
-            min="0"
-            max="600"
-            className={inputClass}
-          />
-        </div>
-      </div>
+      )}
 
       <div>
         <label className="block text-xs font-medium text-gray-400 mb-1.5">
@@ -121,7 +180,7 @@ export function ExerciseForm({ dayId, orderIndex, initial, onSubmit, onCancel }:
           type="text"
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          placeholder="es. Presa larga, focus sul petto"
+          placeholder={effectiveType === 'exercise' ? 'es. Presa larga, focus sul petto' : 'es. Respirazione profonda'}
           className={inputClass}
         />
       </div>
