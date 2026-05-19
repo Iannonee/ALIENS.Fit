@@ -102,17 +102,6 @@ function AuthRoute({ children }: { children: ReactNode }) {
 }
 
 function LandingRoute() {
-  const { user, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
-        <div className="w-10 h-10 border-2 border-neon border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (user) return <Navigate to="/dashboard" replace />
   return <LandingPage />
 }
 
