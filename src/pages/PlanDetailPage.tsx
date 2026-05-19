@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { WorkoutPlan, WorkoutDay, Exercise } from '../types'
 import { Navbar } from '../components/layout/Navbar'
@@ -12,7 +12,6 @@ import { Badge } from '../components/ui/Badge'
 
 export function PlanDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
 
   const [plan, setPlan] = useState<WorkoutPlan | null>(null)
   const [loading, setLoading] = useState(true)
@@ -119,17 +118,6 @@ export function PlanDetailPage() {
       <Navbar />
 
       <div className="max-w-lg mx-auto px-4 pt-6">
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-5"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 5l-7 7 7 7"/>
-          </svg>
-          Dashboard
-        </button>
-
         {loading ? (
           <div className="space-y-4">
             <div className="h-6 bg-dark-800 rounded-lg w-1/2 animate-pulse" />
