@@ -1,10 +1,37 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { isSupabaseConfigured } from './lib/supabase'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { PlanDetailPage } from './pages/PlanDetailPage'
 import { WorkoutSessionPage } from './pages/WorkoutSessionPage'
 import { PremiumPage } from './pages/PremiumPage'
+
+function SetupBanner() {
+  return (
+    <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-12 h-12 rounded-xl bg-neon flex items-center justify-center mb-4">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2.5">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </div>
+      <h1 className="text-2xl font-bold text-white mb-2">ALIENS<span className="text-neon">.Fit</span></h1>
+      <div className="mt-4 bg-dark-800 border border-yellow-500/30 rounded-2xl p-6 max-w-md w-full text-left">
+        <p className="text-yellow-400 font-semibold text-sm mb-3">⚠ Configurazione richiesta</p>
+        <p className="text-gray-400 text-sm mb-4">
+          Le variabili d'ambiente Supabase non sono configurate. Aggiungi su Netlify:
+        </p>
+        <div className="bg-dark-700 rounded-xl p-3 font-mono text-xs text-neon space-y-1">
+          <div>VITE_SUPABASE_URL=...</div>
+          <div>VITE_SUPABASE_ANON_KEY=...</div>
+        </div>
+        <p className="text-gray-600 text-xs mt-3">
+          Trovi i valori su supabase.com → Settings → API
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -40,6 +67,8 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  if (!isSupabaseConfigured) return <SetupBanner />
+
   return (
     <Routes>
       <Route
