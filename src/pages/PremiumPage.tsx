@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/layout/Navbar'
 import { BottomNav } from '../components/layout/BottomNav'
 import { Badge } from '../components/ui/Badge'
@@ -58,7 +57,6 @@ const features = [
 ]
 
 export function PremiumPage() {
-  const navigate = useNavigate()
 
   return (
     <div className="min-h-screen bg-dark-900 pb-24 md:pb-8 md:pt-14">
