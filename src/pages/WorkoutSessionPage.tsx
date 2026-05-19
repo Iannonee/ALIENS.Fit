@@ -74,14 +74,19 @@ export function WorkoutSessionPage() {
 
   const exercises = day?.exercises ?? []
 
-  const totalUnits = exercises.reduce((sum, ex) => {
-    if (ex.exercise_type === 'exercise') return sum + (ex.sets ?? 3)
-    return sum + 1
-  }, 0)
-  const doneUnits = completedSets.size + completedActivities.size
-  const progress = totalUnits > 0 ? (doneUnits / totalUnits) * 100 : 0
-
   const getSetKey = (exId: string, setNum: number) => `${exId}-${setNum}`
+
+  const totalUnits = exercises.length
+
+  const doneUnits = exercises.filter(ex => {
+    if (ex.exercise_type !== 'exercise') return completedActivities.has(ex.id)
+    const plannedSets = ex.sets ?? 3
+    return Array.from({ length: plannedSets }, (_, i) =>
+      completedSets.has(getSetKey(ex.id, i + 1))
+    ).every(Boolean)
+  }).length
+
+  const progress = totalUnits > 0 ? (doneUnits / totalUnits) * 100 : 0
 
   const updateSetInput = (exId: string, setNum: number, field: 'weight' | 'reps', val: string) => {
     const key = getSetKey(exId, setNum)
