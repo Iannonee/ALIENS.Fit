@@ -84,14 +84,12 @@ export function PremiumPage() {
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-neon flex items-center justify-center shadow-neon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
+              <div className="w-12 h-12 rounded-2xl bg-dark-700 border border-neon/30 flex items-center justify-center shadow-neon overflow-hidden">
+                <img src="/logo.svg" alt="AliensFit" className="w-10 h-10" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-white">ALIENS.Fit</h1>
+                  <h1 className="text-xl font-bold text-white">AliensFit</h1>
                   <Badge variant="neon">Premium</Badge>
                 </div>
                 <p className="text-xs text-gray-500">Sblocca il tuo potenziale alieno</p>

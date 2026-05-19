@@ -8,28 +8,30 @@ export function AuthPage() {
   const [tab, setTab] = useState<Tab>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const { signIn, signUp } = useAuth()
+
+  const handleTabChange = (t: Tab) => {
+    setTab(t)
+    setError(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setSuccess(null)
     setLoading(true)
 
     try {
       if (tab === 'login') {
         await signIn(email, password)
       } else {
-        await signUp(email, password)
-        setSuccess('Registrazione effettuata! Controlla la tua email per confermare.')
+        await signUp(email, password, username.trim())
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Si è verificato un errore')
-    } finally {
       setLoading(false)
     }
   }
@@ -39,44 +41,24 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-4">
-      {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-neon flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2.5">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            ALIENS<span className="text-neon">.Fit</span>
-          </h1>
-        </div>
-        <p className="text-sm text-gray-500">Il tuo personal trainer alieno</p>
+        <img src="/logo.svg" alt="AliensFit" className="h-24 w-auto mx-auto" />
       </div>
 
-      {/* Card */}
       <div className="w-full max-w-sm bg-dark-800 border border-dark-700 rounded-2xl p-6 shadow-2xl">
-        {/* Tabs */}
         <div className="flex bg-dark-700 rounded-xl p-1 mb-6">
           <button
-            onClick={() => { setTab('login'); setError(null); setSuccess(null) }}
+            onClick={() => handleTabChange('login')}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === 'login'
-                ? 'bg-neon text-dark-900'
-                : 'text-gray-400 hover:text-white'
+              tab === 'login' ? 'bg-neon text-dark-900' : 'text-gray-400 hover:text-white'
             }`}
           >
             Accedi
           </button>
           <button
-            onClick={() => { setTab('register'); setError(null); setSuccess(null) }}
+            onClick={() => handleTabChange('register')}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === 'register'
-                ? 'bg-neon text-dark-900'
-                : 'text-gray-400 hover:text-white'
+              tab === 'register' ? 'bg-neon text-dark-900' : 'text-gray-400 hover:text-white'
             }`}
           >
             Registrati
@@ -84,6 +66,23 @@ export function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {tab === 'register' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                Username <span className="text-neon">*</span>
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="es. alien_warrior"
+                required
+                className={inputClass}
+                autoComplete="username"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">Email</label>
             <input
@@ -115,19 +114,7 @@ export function AuthPage() {
             </div>
           )}
 
-          {success && (
-            <div className="bg-neon/10 border border-neon/30 rounded-xl px-4 py-3">
-              <p className="text-neon text-sm">{success}</p>
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            disabled={loading}
-            className="w-full mt-1"
-          >
+          <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full mt-1">
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-dark-900 border-t-transparent rounded-full animate-spin" />
@@ -139,7 +126,7 @@ export function AuthPage() {
       </div>
 
       <p className="mt-6 text-xs text-gray-600 text-center">
-        Powered by ALIENS.Fit © 2024
+        Powered by AliensFit © 2025
       </p>
     </div>
   )

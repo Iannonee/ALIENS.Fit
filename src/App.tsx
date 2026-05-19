@@ -1,3 +1,4 @@
+import { Component, type ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -6,16 +7,49 @@ import { DashboardPage } from './pages/DashboardPage'
 import { PlanDetailPage } from './pages/PlanDetailPage'
 import { WorkoutSessionPage } from './pages/WorkoutSessionPage'
 import { PremiumPage } from './pages/PremiumPage'
+import { HistoryPage } from './pages/HistoryPage'
+import { HistorySessionPage } from './pages/HistorySessionPage'
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <img src="/logo.svg" alt="AliensFit" className="w-10 h-10 mb-1" />
+          <h1 className="text-xl font-bold text-white mb-2">AliensFit</h1>
+          <div className="bg-dark-800 border border-red-500/30 rounded-2xl p-5 max-w-md w-full text-left mt-2">
+            <p className="text-red-400 text-sm font-semibold mb-2">Errore applicazione</p>
+            <p className="text-gray-500 text-xs font-mono break-all">{(this.state.error as Error).message}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-neon text-dark-900 font-semibold rounded-xl text-sm hover:brightness-110"
+          >
+            Ricarica
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function SetupBanner() {
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-12 h-12 rounded-xl bg-neon flex items-center justify-center mb-4">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f0f0f" strokeWidth="2.5">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
-      </div>
-      <h1 className="text-2xl font-bold text-white mb-2">ALIENS<span className="text-neon">.Fit</span></h1>
+      <img src="/logo.svg" alt="AliensFit" className="w-14 h-14 mb-1" />
+      <h1 className="text-2xl font-bold text-white mb-2">AliensFit</h1>
       <div className="mt-4 bg-dark-800 border border-yellow-500/30 rounded-2xl p-6 max-w-md w-full text-left">
         <p className="text-yellow-400 font-semibold text-sm mb-3">⚠ Configurazione richiesta</p>
         <p className="text-gray-400 text-sm mb-4">
@@ -33,7 +67,7 @@ function SetupBanner() {
   )
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -51,7 +85,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function AuthRoute({ children }: { children: React.ReactNode }) {
+function AuthRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -70,48 +104,66 @@ export default function App() {
   if (!isSupabaseConfigured) return <SetupBanner />
 
   return (
-    <Routes>
-      <Route
-        path="/auth"
-        element={
-          <AuthRoute>
-            <AuthPage />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/plan/:id"
-        element={
-          <ProtectedRoute>
-            <PlanDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/session/:dayId"
-        element={
-          <ProtectedRoute>
-            <WorkoutSessionPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/premium"
-        element={
-          <ProtectedRoute>
-            <PremiumPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route
+          path="/auth"
+          element={
+            <AuthRoute>
+              <AuthPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan/:id"
+          element={
+            <ProtectedRoute>
+              <PlanDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/session/:dayId"
+          element={
+            <ProtectedRoute>
+              <WorkoutSessionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/premium"
+          element={
+            <ProtectedRoute>
+              <PremiumPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history/:sessionId"
+          element={
+            <ProtectedRoute>
+              <HistorySessionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ErrorBoundary>
   )
 }

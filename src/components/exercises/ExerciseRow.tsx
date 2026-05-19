@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Exercise } from '../../types'
 import { Modal } from '../ui/Modal'
+import { Badge } from '../ui/Badge'
 import { ExerciseForm } from './ExerciseForm'
 
 interface ExerciseRowProps {
@@ -18,10 +19,25 @@ export function ExerciseRow({ exercise, onUpdate, onDelete }: ExerciseRowProps) 
     }
   }
 
+  const exType = exercise.exercise_type ?? 'exercise'
+
   const metaParts: string[] = []
-  if (exercise.sets) metaParts.push(`${exercise.sets} serie`)
-  if (exercise.reps) metaParts.push(`${exercise.reps} rip`)
-  if (exercise.rest_seconds) metaParts.push(`${exercise.rest_seconds}s riposo`)
+  if (exType === 'exercise') {
+    if (exercise.sets) metaParts.push(`${exercise.sets} serie`)
+    if (exercise.reps) metaParts.push(`${exercise.reps} rip`)
+    if (exercise.weight_kg) metaParts.push(`${exercise.weight_kg} kg`)
+    if (exercise.rest_seconds) metaParts.push(`${exercise.rest_seconds}s riposo`)
+  } else {
+    // warmup / cooldown: weight_kg = duration, reps = intensity
+    if (exercise.weight_kg) metaParts.push(`${exercise.weight_kg} min`)
+    if (exercise.reps) metaParts.push(exercise.reps)
+  }
+
+  const modalTitle = exType === 'warmup'
+    ? 'Modifica riscaldamento'
+    : exType === 'cooldown'
+      ? 'Modifica defaticamento'
+      : 'Modifica esercizio'
 
   return (
     <>
@@ -31,7 +47,15 @@ export function ExerciseRow({ exercise, onUpdate, onDelete }: ExerciseRowProps) 
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white truncate">{exercise.name}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {exType === 'warmup' && (
+              <Badge variant="amber" className="text-[10px] px-1.5 py-0">RISCALDAMENTO</Badge>
+            )}
+            {exType === 'cooldown' && (
+              <Badge variant="blue" className="text-[10px] px-1.5 py-0">DEFATICAMENTO</Badge>
+            )}
+            <p className="text-sm font-medium text-white truncate">{exercise.name}</p>
+          </div>
           {metaParts.length > 0 && (
             <p className="text-xs text-gray-500 mt-0.5">{metaParts.join(' · ')}</p>
           )}
@@ -62,10 +86,11 @@ export function ExerciseRow({ exercise, onUpdate, onDelete }: ExerciseRowProps) 
         </div>
       </div>
 
-      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Modifica esercizio">
+      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title={modalTitle}>
         <ExerciseForm
           dayId={exercise.day_id}
           orderIndex={exercise.order_index}
+          type={exType}
           initial={exercise}
           onSubmit={async (updates) => {
             await onUpdate(exercise.id, updates)
