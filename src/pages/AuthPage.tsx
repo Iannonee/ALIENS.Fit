@@ -1,11 +1,14 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 
 type Tab = 'login' | 'register'
 
 export function AuthPage() {
-  const [tab, setTab] = useState<Tab>('login')
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')

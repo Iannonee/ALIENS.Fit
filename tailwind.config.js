@@ -14,6 +14,8 @@ export default {
       },
       fontFamily: {
         sans: ['Space Grotesk', 'sans-serif'],
+        syne: ['Syne', 'sans-serif'],
+        dm: ['DM Sans', 'sans-serif'],
       },
       boxShadow: {
         neon: '0 0 10px #39ff14, 0 0 20px #39ff1420',

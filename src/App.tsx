@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { isSupabaseConfigured } from './lib/supabase'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { LandingPage } from './pages/LandingPage'
 import { PlanDetailPage } from './pages/PlanDetailPage'
 import { WorkoutSessionPage } from './pages/WorkoutSessionPage'
 import { PremiumPage } from './pages/PremiumPage'
@@ -81,7 +82,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!user) return <Navigate to="/auth" replace />
+  if (!user) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
@@ -96,8 +97,23 @@ function AuthRoute({ children }: { children: ReactNode }) {
     )
   }
 
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to="/dashboard" replace />
   return <>{children}</>
+}
+
+function LandingRoute() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
+        <div className="w-10 h-10 border-2 border-neon border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (user) return <Navigate to="/dashboard" replace />
+  return <LandingPage />
 }
 
 export default function App() {
@@ -106,8 +122,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
+        <Route path="/" element={<LandingRoute />} />
         <Route
-          path="/auth"
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/login"
           element={
             <AuthRoute>
               <AuthPage />
@@ -115,11 +140,19 @@ export default function App() {
           }
         />
         <Route
-          path="/"
+          path="/signup"
           element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
+            <AuthRoute>
+              <AuthPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/auth"
+          element={
+            <AuthRoute>
+              <AuthPage />
+            </AuthRoute>
           }
         />
         <Route
