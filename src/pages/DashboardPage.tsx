@@ -6,12 +6,12 @@ import { PlanForm } from '../components/plans/PlanForm'
 import { Modal } from '../components/ui/Modal'
 import { Navbar } from '../components/layout/Navbar'
 import { BottomNav } from '../components/layout/BottomNav'
-import { Button } from '../components/ui/Button'
+import { PdfImportModal } from '../components/plans/PdfImportModal'
 import type { WorkoutPlan } from '../types'
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const { plans, loading, error, createPlan, updatePlan, deletePlan } = usePlans(user)
+  const { plans, loading, error, createPlan, updatePlan, deletePlan, refetch } = usePlans(user)
 
   const [showCreate, setShowCreate] = useState(false)
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null)
@@ -153,22 +153,11 @@ export function DashboardPage() {
       </Modal>
 
       <Modal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} title="Importa da PDF">
-        <div className="flex flex-col items-center text-center gap-4 py-4">
-          <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="1.5">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-white font-semibold text-base mb-1">Funzione Premium</h3>
-            <p className="text-sm text-gray-500 max-w-[260px]">
-              L'importazione da PDF tramite AI sarà disponibile con il piano Premium.
-            </p>
-          </div>
-          <Button variant="outline" size="md" onClick={() => setShowPdfModal(false)}>
-            Chiudi
-          </Button>
-        </div>
+        <PdfImportModal
+          user={user}
+          onSuccess={refetch}
+          onClose={() => setShowPdfModal(false)}
+        />
       </Modal>
     </div>
   )
