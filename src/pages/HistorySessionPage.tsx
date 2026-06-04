@@ -6,7 +6,6 @@ import { Badge } from '../components/ui/Badge'
 import { Navbar } from '../components/layout/Navbar'
 import { BottomNav } from '../components/layout/BottomNav'
 import { Button } from '../components/ui/Button'
-
 function sortExercises(exercises: Exercise[]): Exercise[] {
   const order = { warmup: 0, exercise: 1, cooldown: 2 }
   return [...exercises].sort((a, b) => {
@@ -24,6 +23,16 @@ export function HistorySessionPage() {
   const [logs, setLogs] = useState<SessionExerciseLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!sessionId) return
+    setDeleting(true)
+    await supabase.from('session_exercise_logs').delete().eq('session_id', sessionId)
+    await supabase.from('workout_sessions').delete().eq('id', sessionId)
+    navigate('/history')
+  }
 
   useEffect(() => {
     if (!sessionId) return
@@ -100,9 +109,44 @@ export function HistorySessionPage() {
 
         {/* Session header */}
         <div className="bg-dark-800 border border-dark-700 rounded-2xl p-5 mb-6">
-          <p className="text-xs text-gray-500 mb-1 capitalize">{dateLabel} · {timeLabel}</p>
-          <h1 className="text-xl font-bold text-white mb-0.5">{dayName}</h1>
-          {planName && <p className="text-sm text-gray-500">{planName}</p>}
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500 mb-1 capitalize">{dateLabel} · {timeLabel}</p>
+              <h1 className="text-xl font-bold text-white mb-0.5">{dayName}</h1>
+              {planName && <p className="text-sm text-gray-500">{planName}</p>}
+            </div>
+            {/* Delete controls */}
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex-shrink-0 p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Elimina sessione"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            ) : (
+              <div className="flex-shrink-0 flex items-center gap-2">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-gray-500 hover:text-white transition-colors px-2 py-1"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="text-xs font-semibold text-white bg-red-500/80 hover:bg-red-500 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  {deleting ? 'Eliminando…' : 'Elimina'}
+                </button>
+              </div>
+            )}
+          </div>
           {session.notes && (
             <p className="text-sm text-gray-400 mt-3 italic border-t border-dark-700 pt-3">"{session.notes}"</p>
           )}
