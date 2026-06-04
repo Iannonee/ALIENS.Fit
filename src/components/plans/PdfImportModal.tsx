@@ -11,18 +11,19 @@ interface Props {
 
 export function PdfImportModal({ user, onSuccess, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { step, file, parsed, error, handleFile, parse, save, reset } = usePdfImport(user, () => {
+  const {
+    step, file, workouts, selected, saveProgress, error,
+    handleFile, parse, toggleSelect, selectAll, deselectAll, save, reset,
+  } = usePdfImport(user, () => {
     onSuccess()
-    setTimeout(onClose, 800)
+    setTimeout(onClose, 1000)
   })
 
-  const handleClose = () => {
-    reset()
-    onClose()
-  }
+  const handleClose = () => { reset(); onClose() }
 
-  // Success state
+  // Success
   if (step === 'done') {
+    const count = saveProgress?.total ?? selected.size
     return (
       <div className="flex flex-col items-center text-center gap-4 py-6">
         <div className="w-14 h-14 rounded-2xl bg-neon/10 border border-neon/30 flex items-center justify-center">
@@ -31,55 +32,101 @@ export function PdfImportModal({ user, onSuccess, onClose }: Props) {
           </svg>
         </div>
         <div>
-          <p className="text-white font-semibold text-base">Scheda importata!</p>
-          <p className="text-sm text-gray-500 mt-1">La puoi trovare nella lista delle tue schede.</p>
+          <p className="text-white font-semibold text-base">
+            {count === 1 ? '1 scheda importata!' : `${count} schede importate!`}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">Le puoi trovare nella lista delle tue schede.</p>
         </div>
       </div>
     )
   }
 
-  // Preview / confirm step
-  if ((step === 'preview' || step === 'saving') && parsed) {
+  // Preview / saving
+  if ((step === 'preview' || step === 'saving') && workouts.length > 0) {
+    const isSaving = step === 'saving'
     return (
       <div className="flex flex-col gap-4">
-        <div className="bg-dark-700 border border-dark-600 rounded-xl p-4">
-          <p className="text-xs text-gray-500 mb-1">Scheda rilevata</p>
-          <p className="text-white font-semibold text-sm mb-3">"{parsed.name}"</p>
-          <div className="flex flex-col gap-2">
-            {parsed.days.map((day, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#39ff14" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                <span className="text-sm text-[#e0e0e0]">
-                  {day.name}
-                  <span className="text-gray-500 ml-1">({day.exercises.length} esercizi)</span>
-                </span>
-              </div>
-            ))}
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-500">
+            {workouts.length} {workouts.length === 1 ? 'settimana trovata' : 'settimane trovate'} · {selected.size} selezionate
+          </p>
+          <div className="flex gap-3">
+            <button onClick={selectAll} className="text-xs text-neon hover:underline">Seleziona tutte</button>
+            <button onClick={deselectAll} className="text-xs text-gray-500 hover:text-white">Deseleziona</button>
           </div>
         </div>
+
+        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
+          {workouts.map((w, i) => {
+            const isChecked = selected.has(i)
+            const daysSummary = w.days
+              .map(d => `${d.name} (${d.exercises.length} es.)`)
+              .join(' · ')
+            return (
+              <label
+                key={i}
+                className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                  isChecked
+                    ? 'bg-neon/5 border-neon/30'
+                    : 'bg-dark-700 border-dark-600 opacity-60'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleSelect(i)}
+                  disabled={isSaving}
+                  className="mt-0.5 accent-[#39ff14] w-4 h-4 shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white leading-tight">{w.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{daysSummary}</p>
+                </div>
+              </label>
+            )
+          })}
+        </div>
+
+        {isSaving && saveProgress && (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1.5 bg-dark-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-neon rounded-full transition-all duration-300"
+                style={{ width: `${(saveProgress.done / saveProgress.total) * 100}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 whitespace-nowrap">
+              {saveProgress.done}/{saveProgress.total}
+            </span>
+          </div>
+        )}
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
 
         <div className="flex gap-2">
-          <Button variant="outline" size="md" onClick={handleClose} className="flex-1" disabled={step === 'saving'}>
+          <Button variant="outline" size="md" onClick={handleClose} className="flex-1" disabled={isSaving}>
             Annulla
           </Button>
-          <Button variant="primary" size="md" onClick={save} className="flex-1" disabled={step === 'saving'}>
-            {step === 'saving' ? (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={save}
+            className="flex-1"
+            disabled={isSaving || selected.size === 0}
+          >
+            {isSaving ? (
               <span className="flex items-center gap-2 justify-center">
                 <span className="w-4 h-4 border-2 border-dark-900 border-t-transparent rounded-full animate-spin" />
-                Salvataggio…
+                Importazione…
               </span>
-            ) : 'Conferma e salva'}
+            ) : `Importa ${selected.size === workouts.length ? 'tutte' : selected.size === 1 ? '1 scheda' : `${selected.size} schede`}`}
           </Button>
         </div>
       </div>
     )
   }
 
-  // Upload step (idle / parsing)
+  // Upload (idle / parsing)
   return (
     <div className="flex flex-col gap-4">
       <div
@@ -143,7 +190,7 @@ export function PdfImportModal({ user, onSuccess, onClose }: Props) {
             <span className="w-4 h-4 border-2 border-dark-900 border-t-transparent rounded-full animate-spin" />
             Lettura PDF in corso…
           </span>
-        ) : 'Importa scheda'}
+        ) : 'Leggi PDF'}
       </Button>
     </div>
   )

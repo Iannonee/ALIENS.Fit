@@ -95,128 +95,142 @@ export function isValidParsedWorkout(workout: ParsedWorkout): boolean {
   return workout.days.length > 0 && workout.days.some(d => d.exercises.length > 0)
 }
 
-export async function parseWorkoutPdf(file: File): Promise<ParsedWorkout | null> {
+async function parsePage(
+  pdf: pdfjsLib.PDFDocumentProxy,
+  pageNum: number,
+  fileName: string
+): Promise<ParsedWorkout | null> {
+  const page = await pdf.getPage(pageNum)
+  const content = await page.getTextContent()
+
+  // Group tokens by Y coordinate (same Y = same row)
+  const itemsByY = new Map<number, string[]>()
+  for (const item of content.items as Array<{ str: string; transform: number[] }>) {
+    const y = Math.round(item.transform[5])
+    if (!itemsByY.has(y)) itemsByY.set(y, [])
+    itemsByY.get(y)!.push(item.str)
+  }
+
+  // Sort Y descending = top to bottom
+  const sortedYs = Array.from(itemsByY.keys()).sort((a, b) => b - a)
+
+  const days: ParsedDay[] = []
+  let currentDay: ParsedDay | null = null
+  let workoutName = ''
+  let weekNumber: number | null = null
+  let firstContentLine = true
+  let pendingWarmup: ParsedExercise | null = null
+
+  for (const y of sortedYs) {
+    const tokens = itemsByY.get(y)!
+    const nonEmpty = tokens.filter(t => t.trim())
+    if (nonEmpty.length === 0) continue
+
+    const joined = nonEmpty.join(' ').replace(/\s{2,}/g, ' ').trim()
+
+    // Extract week number from header (e.g. "Settimana 1 di 10")
+    if (weekNumber === null) {
+      const wm = /settimana\s+(\d+)\s+di\s+\d+/i.exec(joined)
+      if (wm) weekNumber = parseInt(wm[1])
+    }
+
+    // Intercept global warmup hint before skip check
+    if (!currentDay && /riscaldamento|cardio/i.test(joined)) {
+      const durMatch = joined.match(/(\d+)['\s]*(min|minuti|')/i)
+      pendingWarmup = {
+        exercise_type: 'warmup',
+        name: 'Riscaldamento (cardio + mobilità)',
+        sets: null,
+        reps: null,
+        rest_seconds: null,
+        duration_minutes: durMatch ? parseInt(durMatch[1]) : 10,
+        notes: 'Prima di ogni allenamento',
+      }
+    }
+
+    if (shouldSkip(joined)) continue
+
+    // First non-skipped line = potential workout title
+    if (firstContentLine) {
+      firstContentLine = false
+      workoutName = joined
+      continue
+    }
+
+    if (isDayHeader(joined)) {
+      if (currentDay) {
+        fixCooldowns(currentDay.exercises)
+        days.push(currentDay)
+      }
+      currentDay = { name: joined.replace(/[-–—]\s*$/, '').trim(), exercises: [] }
+      if (pendingWarmup) {
+        currentDay.exercises.push({ ...pendingWarmup })
+      }
+      continue
+    }
+
+    if (!currentDay) continue
+
+    const name = nonEmpty[0]?.trim()
+    if (!name || name.length < 2) continue
+
+    const methodToken = nonEmpty[2]?.trim() ?? ''
+    const restToken = nonEmpty[3]?.trim() ?? ''
+
+    let sets: number | null = null
+    let reps: string | null = null
+    let duration_minutes: number | null = null
+
+    const srMatch = SETS_REPS.exec(methodToken)
+    const durMatch = DURATION.exec(methodToken)
+
+    if (srMatch) {
+      sets = parseInt(srMatch[1])
+      reps = srMatch[2].replace(/[""']$/, '')
+    } else if (durMatch) {
+      duration_minutes = parseInt(durMatch[1])
+    }
+
+    const rest_seconds = parseRest(restToken)
+    const exercise_type = getExerciseType(name)
+
+    currentDay.exercises.push({
+      exercise_type,
+      name,
+      sets,
+      reps,
+      rest_seconds,
+      duration_minutes,
+      notes: '',
+    })
+  }
+
+  if (currentDay) {
+    fixCooldowns(currentDay.exercises)
+    days.push(currentDay)
+  }
+
+  if (days.length === 0 || days.every(d => d.exercises.length === 0)) return null
+
+  const label = weekNumber !== null
+    ? `Settimana ${weekNumber}`
+    : extractWorkoutName([workoutName], fileName)
+
+  return { name: label, days }
+}
+
+export async function parseWorkoutPdf(file: File): Promise<ParsedWorkout[] | null> {
   try {
     const arrayBuffer = await file.arrayBuffer()
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
 
-    // Only parse first page — subsequent pages are the same workout for later weeks
-    const page = await pdf.getPage(1)
-    const content = await page.getTextContent()
-
-    // Group tokens by Y coordinate (same Y = same row)
-    const itemsByY = new Map<number, string[]>()
-    for (const item of content.items as Array<{ str: string; transform: number[] }>) {
-      const y = Math.round(item.transform[5])
-      if (!itemsByY.has(y)) itemsByY.set(y, [])
-      itemsByY.get(y)!.push(item.str)
+    const results: ParsedWorkout[] = []
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const workout = await parsePage(pdf, pageNum, file.name)
+      if (workout) results.push(workout)
     }
 
-    // Sort Y descending = top to bottom
-    const sortedYs = Array.from(itemsByY.keys()).sort((a, b) => b - a)
-
-    const days: ParsedDay[] = []
-    let currentDay: ParsedDay | null = null
-    let workoutName = ''
-    let firstContentLine = true
-    let pendingWarmup: ParsedExercise | null = null
-
-    for (const y of sortedYs) {
-      const tokens = itemsByY.get(y)!
-      const nonEmpty = tokens.filter(t => t.trim())
-      if (nonEmpty.length === 0) continue
-
-      const joined = nonEmpty.join(' ').replace(/\s{2,}/g, ' ').trim()
-
-      // Intercept global warmup hint before skip check
-      if (!currentDay && /riscaldamento|cardio/i.test(joined)) {
-        const durMatch = joined.match(/(\d+)['\s]*(min|minuti|')/i)
-        pendingWarmup = {
-          exercise_type: 'warmup',
-          name: 'Riscaldamento (cardio + mobilità)',
-          sets: null,
-          reps: null,
-          rest_seconds: null,
-          duration_minutes: durMatch ? parseInt(durMatch[1]) : 10,
-          notes: 'Prima di ogni allenamento',
-        }
-      }
-
-      if (shouldSkip(joined)) continue
-
-      // First non-skipped line = potential workout title
-      if (firstContentLine) {
-        firstContentLine = false
-        workoutName = joined
-        continue
-      }
-
-      if (isDayHeader(joined)) {
-        if (currentDay) {
-          fixCooldowns(currentDay.exercises)
-          days.push(currentDay)
-        }
-        currentDay = { name: joined.replace(/[-–—]\s*$/, '').trim(), exercises: [] }
-        if (pendingWarmup) {
-          currentDay.exercises.push({ ...pendingWarmup })
-        }
-        continue
-      }
-
-      if (!currentDay) continue
-
-      // Parse exercise row: tokens are [name, muscle, method, rest]
-      // nonEmpty[0] = exercise name
-      // nonEmpty[1] = muscle group (ignored)
-      // nonEmpty[2] = sets×reps or duration
-      // nonEmpty[3] = rest seconds or "--"
-      const name = nonEmpty[0]?.trim()
-      if (!name || name.length < 2) continue
-
-      const methodToken = nonEmpty[2]?.trim() ?? ''
-      const restToken = nonEmpty[3]?.trim() ?? ''
-
-      let sets: number | null = null
-      let reps: string | null = null
-      let duration_minutes: number | null = null
-
-      const srMatch = SETS_REPS.exec(methodToken)
-      const durMatch = DURATION.exec(methodToken)
-
-      if (srMatch) {
-        sets = parseInt(srMatch[1])
-        reps = srMatch[2].replace(/[""']$/, '') // strip trailing quote from "2x45""
-      } else if (durMatch) {
-        duration_minutes = parseInt(durMatch[1])
-      }
-
-      const rest_seconds = parseRest(restToken)
-      const exercise_type = getExerciseType(name)
-
-      currentDay.exercises.push({
-        exercise_type,
-        name,
-        sets,
-        reps,
-        rest_seconds,
-        duration_minutes,
-        notes: '',
-      })
-    }
-
-    if (currentDay) {
-      fixCooldowns(currentDay.exercises)
-      days.push(currentDay)
-    }
-
-    if (days.length === 0 || days.every(d => d.exercises.length === 0)) return null
-
-    const workout: ParsedWorkout = {
-      name: extractWorkoutName([workoutName], file.name),
-      days,
-    }
-
-    return workout
+    return results.length > 0 ? results : null
   } catch {
     return null
   }

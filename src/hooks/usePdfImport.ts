@@ -6,16 +6,56 @@ import type { User } from '@supabase/supabase-js'
 
 type Step = 'idle' | 'parsing' | 'preview' | 'saving' | 'done'
 
+async function saveWorkout(userId: string, workout: ParsedWorkout): Promise<void> {
+  const { data: plan, error: planErr } = await supabase
+    .from('workout_plans')
+    .insert({ user_id: userId, name: workout.name, description: null })
+    .select('id')
+    .single()
+  if (planErr) throw planErr
+
+  for (let di = 0; di < workout.days.length; di++) {
+    const day = workout.days[di]
+    const { data: dayRow, error: dayErr } = await supabase
+      .from('workout_days')
+      .insert({ plan_id: plan.id, name: day.name, order_index: di })
+      .select('id')
+      .single()
+    if (dayErr) throw dayErr
+
+    if (day.exercises.length > 0) {
+      const { error: exErr } = await supabase.from('exercises').insert(
+        day.exercises.map((ex, ei) => ({
+          day_id: dayRow.id,
+          name: ex.name,
+          exercise_type: ex.exercise_type,
+          sets: ex.sets,
+          reps: ex.reps,
+          rest_seconds: ex.rest_seconds,
+          weight_kg: null,
+          notes: ex.notes || null,
+          order_index: ei,
+        }))
+      )
+      if (exErr) throw exErr
+    }
+  }
+}
+
 export function usePdfImport(user: User | null, onSuccess: () => void) {
   const [step, setStep] = useState<Step>('idle')
   const [file, setFile] = useState<File | null>(null)
-  const [parsed, setParsed] = useState<ParsedWorkout | null>(null)
+  const [workouts, setWorkouts] = useState<ParsedWorkout[]>([])
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const reset = () => {
     setStep('idle')
     setFile(null)
-    setParsed(null)
+    setWorkouts([])
+    setSelected(new Set())
+    setSaveProgress(null)
     setError(null)
   }
 
@@ -33,9 +73,9 @@ export function usePdfImport(user: User | null, onSuccess: () => void) {
     setError(null)
     setStep('parsing')
 
-    const result = await parseWorkoutPdf(file)
+    const results = await parseWorkoutPdf(file)
 
-    if (!result || !isValidParsedWorkout(result)) {
+    if (!results || results.filter(isValidParsedWorkout).length === 0) {
       setError(
         'Non è stato possibile leggere la scheda. Il PDF potrebbe essere una scansione o avere un formato non supportato. Prova a creare la scheda manualmente.'
       )
@@ -43,59 +83,48 @@ export function usePdfImport(user: User | null, onSuccess: () => void) {
       return
     }
 
-    setParsed(result)
+    const valid = results.filter(isValidParsedWorkout)
+    setWorkouts(valid)
+    setSelected(new Set(valid.map((_, i) => i)))
     setStep('preview')
   }
 
+  const toggleSelect = (i: number) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+
+  const selectAll = () => setSelected(new Set(workouts.map((_, i) => i)))
+  const deselectAll = () => setSelected(new Set())
+
   const save = async () => {
-    if (!parsed || !user) return
+    if (!user || selected.size === 0) return
     setStep('saving')
     setError(null)
 
+    const toSave = workouts.filter((_, i) => selected.has(i))
+    setSaveProgress({ done: 0, total: toSave.length })
+
     try {
-      // Create plan
-      const { data: plan, error: planErr } = await supabase
-        .from('workout_plans')
-        .insert({ user_id: user.id, name: parsed.name, description: null })
-        .select('id')
-        .single()
-      if (planErr) throw planErr
-
-      // Create days + exercises
-      for (let di = 0; di < parsed.days.length; di++) {
-        const day = parsed.days[di]
-        const { data: dayRow, error: dayErr } = await supabase
-          .from('workout_days')
-          .insert({ plan_id: plan.id, name: day.name, order_index: di })
-          .select('id')
-          .single()
-        if (dayErr) throw dayErr
-
-        if (day.exercises.length > 0) {
-          const { error: exErr } = await supabase.from('exercises').insert(
-            day.exercises.map((ex, ei) => ({
-              day_id: dayRow.id,
-              name: ex.name,
-              exercise_type: ex.exercise_type,
-              sets: ex.sets,
-              reps: ex.reps,
-              rest_seconds: ex.rest_seconds,
-              weight_kg: null,
-              notes: ex.notes || null,
-              order_index: ei,
-            }))
-          )
-          if (exErr) throw exErr
-        }
+      for (let i = 0; i < toSave.length; i++) {
+        await saveWorkout(user.id, toSave[i])
+        setSaveProgress({ done: i + 1, total: toSave.length })
       }
-
       setStep('done')
       onSuccess()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Errore durante il salvataggio.')
       setStep('preview')
+      setSaveProgress(null)
     }
   }
 
-  return { step, file, parsed, error, handleFile, parse, save, reset }
+  return {
+    step, file, workouts, selected, saveProgress, error,
+    handleFile, parse, toggleSelect, selectAll, deselectAll, save, reset,
+  }
 }
