@@ -1,6 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist'
+import PDFWorker from 'pdfjs-dist/build/pdf.worker.min?url'
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker
 
 export interface ParsedExercise {
   exercise_type: 'exercise' | 'warmup' | 'cooldown'
