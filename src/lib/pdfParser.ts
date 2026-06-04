@@ -34,20 +34,22 @@ const SKIP_PATTERNS = [
 
 const CARDIO_NAMES = ['tapis roulant', 'ellittica', 'bike', 'cyclette', 'vogatore', 'cardio']
 
-const DAY_PREFIXES = [
-  /^giorno\s+[a-z0-9]/i,
-  /^(push|pull|legs|upper|lower|full\s*body)\b/i,
-  /^(lunedì|martedì|mercoledì|giovedì|venerdì|sabato|domenica)\b/i,
-]
+const DAY_EXACT = ['push', 'pull', 'legs', 'upper', 'lower', 'full body']
+const DAY_WEEKDAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
 
 function shouldSkip(line: string): boolean {
   if (!line || line === '--') return true
   const lower = line.toLowerCase()
+  // Check warmup hint before skip — handled separately in main loop
   return SKIP_PATTERNS.some(p => lower.includes(p))
 }
 
 function isDayHeader(line: string): boolean {
-  return DAY_PREFIXES.some(p => p.test(line.trim()))
+  const t = line.trim().toLowerCase()
+  if (/^giorno\s+[a-z0-9]/i.test(t)) return true
+  if (DAY_EXACT.some(k => t === k || t === k + ' day')) return true
+  if (DAY_WEEKDAYS.some(k => t.startsWith(k))) return true
+  return false
 }
 
 function isCardio(name: string): boolean {
@@ -116,6 +118,7 @@ export async function parseWorkoutPdf(file: File): Promise<ParsedWorkout | null>
     let currentDay: ParsedDay | null = null
     let workoutName = ''
     let firstContentLine = true
+    let pendingWarmup: ParsedExercise | null = null
 
     for (const y of sortedYs) {
       const tokens = itemsByY.get(y)!
@@ -123,6 +126,20 @@ export async function parseWorkoutPdf(file: File): Promise<ParsedWorkout | null>
       if (nonEmpty.length === 0) continue
 
       const joined = nonEmpty.join(' ').replace(/\s{2,}/g, ' ').trim()
+
+      // Intercept global warmup hint before skip check
+      if (!currentDay && /riscaldamento|cardio/i.test(joined)) {
+        const durMatch = joined.match(/(\d+)['\s]*(min|minuti|')/i)
+        pendingWarmup = {
+          exercise_type: 'warmup',
+          name: 'Riscaldamento (cardio + mobilità)',
+          sets: null,
+          reps: null,
+          rest_seconds: null,
+          duration_minutes: durMatch ? parseInt(durMatch[1]) : 10,
+          notes: 'Prima di ogni allenamento',
+        }
+      }
 
       if (shouldSkip(joined)) continue
 
@@ -139,6 +156,9 @@ export async function parseWorkoutPdf(file: File): Promise<ParsedWorkout | null>
           days.push(currentDay)
         }
         currentDay = { name: joined.replace(/[-–—]\s*$/, '').trim(), exercises: [] }
+        if (pendingWarmup) {
+          currentDay.exercises.push({ ...pendingWarmup })
+        }
         continue
       }
 
